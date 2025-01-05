@@ -1,0 +1,11 @@
+<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
+
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 48
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 33
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 36
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 33
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 36
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 33
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 36
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 33
+ERROR - 2021-07-02 08:38:23 --> Severity: Warning --> count(): Parameter must be an array or an object that implements Countable /home/u910028744/domains/nemmaditech.in/public_html/pm/application/views/admin/proposals/proposals_state_report.php 36
