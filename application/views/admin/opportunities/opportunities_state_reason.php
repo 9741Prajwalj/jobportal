@@ -4,8 +4,14 @@ echo message_box('error');
 $created = can_action('129', 'created');
 $edited = can_action('129', 'edited');
 ?>
-<div class="panel panel-custom">
-    <header class="panel-heading ">
+
+<!-- Include jQuery UI for draggable functionality -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+<div class="panel panel-custom top-modal">
+    <header class="panel-heading">
         <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
                 class="sr-only">Close</span></button>
         <?= lang('opportunities_state_reason') ?></header>
@@ -47,6 +53,13 @@ $edited = can_action('129', 'edited');
     <?php } ?>
 </div>
 <script type="text/javascript">
+
+$(document).ready(function () {
+        // Make the modal draggable
+        $('.top-modal').draggable({
+            handle: '.panel-heading' // Drag the modal by its header
+        });
+    });
 
     $(document).on("submit", "form", function (event) {
         var form = $(event.target);

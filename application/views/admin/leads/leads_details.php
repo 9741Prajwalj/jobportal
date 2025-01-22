@@ -52,24 +52,50 @@ $deleted = can_action('55', 'deleted');
                    href="<?= base_url() ?>admin/leads/convert/<?= $leads_details->leads_id ?>"
                    class="btn-xs btn btn-purple pull-right"><i
                             class="fa fa-copy"></i> <?= lang('convert_to_client') ?></a>
-
-                    <div class="container" style="margin:10px">
-                        <button class="btn btn-primary" onclick="window.location.href='<?= base_url('/admin/opportunities') ?>'">
-                            Convert to Opportunity
-                        </button>
-                    </div>
                 <?php
             }
             
         }
-        
         $notified_reminder = count($this->db->where(array('module' => 'leads', 'module_id' => $leads_details->leads_id, 'notified' => 'No'))->get('tbl_reminders')->result());
         ?>
+        <!-- Edit sps start -->
+        <div class="col-sm-14">
+        <?php
+        if ($leads_details->converted_opportunity_id == 0) { // Check for 'converted_opportunity_id'
+            if (!empty($can_edit) && !empty($edited)) { ?>
+                <!-- Uncomment the edit button if required -->
+                <!-- <a href="<?= base_url() ?>admin/leads/index/<?= $leads_details->leads_id ?>"
+                    class="btn-xs btn btn-primary"
+                    title=""
+                    data-toggle="tooltip" data-placement="top" data-original-title="Edit"><i
+                            class="fa fa-pencil-square-o"></i></a> -->
+            <?php } ?>
+
+            <?php if (!empty($can_edit) && !empty($edited)) { ?>
+                <a data-toggle="modal" data-target="#myModal_lg"
+                onclick="return confirm('Are you sure to <?= lang('convert') ?> this <?= $leads_details->lead_name ?> to Opportunity?')"
+                href="<?= base_url() ?>admin/leads/convert_to_opportunities/<?= $leads_details->leads_id ?>" 
+                class="btn-xs btn btn-purple pull-right"><i
+                        class="fa fa-copy"></i> <?= lang('convert_to_opportunity') ?></a> <!-- Updated label -->
+            <?php } ?>
+        <?php } ?>
+
+        <?php
+        // Count the number of reminders where 'notified' is 'No'
+        $notified_reminder = count($this->db->where(array(
+            'module' => 'leads',
+            'module_id' => $leads_details->leads_id,
+            'notified' => 'No'
+        ))->get('tbl_reminders')->result());
+        ?>
+    </div>
+
+            <!-- Edit sps ends -->
         <!-- Tabs within a box -->
         <ul class="<?php
         if ($leads_details->converted_client_id == 0) {
             echo 'mt';
-        } ?> nav nav-pills nav-stacked navbar-custom-nav">
+        } ?> nav nav-pills nav-stacked navbar-custom-nav" style="padding-top: 20px;">
             <li class="<?= $active == 1 ? 'active' : '' ?>"><a href="#task_details"
                                                                data-toggle="tab"><?= lang('leads_details') ?></a>
             </li>
@@ -141,20 +167,20 @@ $deleted = can_action('55', 'deleted');
                                    class="btn-xs btn btn-<?= $btn ?>"><i class="fa fa-thumb-tack"></i></a>
                             </div>
                             <span class="btn-xs pull-right">
-<?php
-if ($leads_details->converted_client_id == 0) {
-    if (!empty($can_edit) && !empty($edited)) { ?>
-        <a href="<?= base_url() ?>admin/leads/index/<?= $leads_details->leads_id ?>"><?= lang('edit') . ' ' . lang('leads') ?></a>
-    <?php }
-} else {
-    $c_edited = can_action('4', 'edited');
-    if (!empty($c_edited)) {
-        ?>
-        <a href="<?php echo base_url() ?>admin/client/manage_client/<?= $leads_details->converted_client_id ?>"
-           class="btn-xs pull-right"><i class="fa fa-edit"></i> <?= lang('edit') . ' ' . lang('client') ?></a>
-    <?php }
-} ?>
-                    </span>
+                                <?php
+                                if ($leads_details->converted_client_id == 0) {
+                                    if (!empty($can_edit) && !empty($edited)) { ?>
+                                        <a href="<?= base_url() ?>admin/leads/index/<?= $leads_details->leads_id ?>"><?= lang('edit') . ' ' . lang('leads') ?></a>
+                                    <?php }
+                                } else {
+                                    $c_edited = can_action('4', 'edited');
+                                    if (!empty($c_edited)) {
+                                        ?>
+                                        <a href="<?php echo base_url() ?>admin/client/manage_client/<?= $leads_details->converted_client_id ?>"
+                                        class="btn-xs pull-right"><i class="fa fa-edit"></i> <?= lang('edit') . ' ' . lang('client') ?></a>
+                                    <?php }
+                                } ?>
+                            </span>
                         </h3>
                     </div>
                     <div class="panel-body row form-horizontal task_details">
@@ -649,7 +675,6 @@ if ($leads_details->converted_client_id == 0) {
                                             ?>
                                         </select>
                                     </div>
-
                                 </div>
                                 <div class="form-group">
                                     <label class="col-lg-3 control-label"><?= lang('responsible') ?><span

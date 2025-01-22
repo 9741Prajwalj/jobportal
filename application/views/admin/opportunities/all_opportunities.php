@@ -5,6 +5,35 @@ $edited = can_action('56', 'edited');
 $deleted = can_action('56', 'deleted');
 if (!empty($created) || !empty($edited)){
 ?>
+<?php
+
+// editing sps start
+$where = array('user_id' => $this->session->userdata('user_id'), 'module_id' => $leads_details->leads_id, 'module_name' => 'leads');
+$check_existing = $this->items_model->check_by($where, 'tbl_pinaction');
+if (!empty($check_existing)) {
+    $url = 'remove_todo/' . $check_existing->pinaction_id;
+    $btn = 'danger';
+    $title = lang('remove_todo');
+} else {
+    $url = 'add_todo_list/leads/' . $leads_details->leads_id;
+    $btn = 'warning';
+    $title = lang('add_todo_list');
+}
+
+
+$can_edit = $this->items_model->can_action('tbl_leads', 'edit', array('leads_id' => $leads_details->leads_id));
+$can_delete = $this->items_model->can_action('tbl_leads', 'delete', array('leads_id' => $leads_details->leads_id));
+$all_calls_info = $this->db->where('leads_id', $leads_details->leads_id)->get('tbl_calls')->result();
+$all_meetings_info = $this->db->where('leads_id', $leads_details->leads_id)->get('tbl_mettings')->result();
+
+$comment_details = $this->db->where(array('leads_id' => $leads_details->leads_id, 'comments_reply_id' => '0', 'task_attachment_id' => '0', 'uploaded_files_id' => '0'))->order_by('comment_datetime', 'DESC')->get('tbl_task_comment')->result();
+$all_task_info = $this->db->where('leads_id', $leads_details->leads_id)->order_by('leads_id', 'DESC')->get('tbl_task')->result();
+$activities_info = $this->db->where(array('module' => 'leads', 'module_field_id' => $leads_details->leads_id))->order_by('activity_date', 'DESC')->get('tbl_activities')->result();
+$all_proposals_info = $this->db->where(array('module' => 'leads', 'module_id' => $leads_details->leads_id))->order_by('proposals_id', 'DESC')->get('tbl_proposals')->result();
+$all_tender =  $this->db->where(array('leads_id'=> $leads_details->leads_id,'deletion_indicator'=>0))->order_by('leads_id', 'DESC')->get('tbl_leads_tenders')->result();
+// editing sps end
+
+?>
 <div class="nav-tabs-custom">
     <!-- Tabs within a box -->
     <ul class="nav nav-tabs">
@@ -64,7 +93,7 @@ if (!empty($created) || !empty($edited)){
                               echo $opportunity_info->opportunities_id;
                           }
                           ?>" method="post" class="form-horizontal  ">
-
+                        <!-- ooooooooooooooooooooo -->
                         <div class="panel-body">
                             <div class="form-group">
                                 <label class="col-lg-2 control-label"><?= lang('opportunity_name') ?> <span
@@ -104,8 +133,6 @@ if (!empty($created) || !empty($edited)){
                                            data-slider-value="<?php if (!empty($opportunity_info->probability)) echo $opportunity_info->probability; ?>"
                                            data-slider-orientation="horizontal" class="slider slider-horizontal"
                                            data-slider-id="red">
-
-
                                 </div>
                                 <div class="form-group">
                                     <label class="col-lg-2 control-label"><?= lang('close_date') ?></label>
@@ -174,108 +201,57 @@ if (!empty($created) || !empty($edited)){
                                     </div>
                                 </div>
                             </div>
-
+                            <!-- Edited sps starts -->
                             <div class="form-group">
-
-                            <label class="col-lg-2 control-label"><?= lang('contact_name') ?> <span
-                                        class="text-danger">*</span></label>
-                            <div class="col-lg-4">
-                                <input type="text" class="form-control" value="<?php
-                                if (!empty($leads_info)) {
-                                    echo $leads_info->contact_name;
-                                }
-                                ?>" name="contact_name" disabled>
+                                <label class="col-lg-2 control-label"><?= lang('company_name') ?> <span class="text-danger">*</span></label>
+                                <div class="col-lg-4">
+                                    <input type="text" class="form-control" value="<?= !empty($leads_info->company_name) ? $leads_info->contact_name : '' ?>" name="company_name" >
+                                </div>
+                                <label class="col-lg-2 control-label"><?= lang('email') ?> <span class="text-danger">*</span></label>
+                                <div class="col-lg-4">
+                                    <input type="email" class="form-control" value="<?= !empty($leads_info->email) ? $leads_info->email : '' ?>" name="email" >
+                                </div>
                             </div>
-                            <label class="col-lg-2 control-label"><?= lang('email') ?> <span
-                                        class="text-danger">*</span></label>
-                            <div class="col-lg-4">
-                                <input type="email" class="form-control" value="<?php
-                                if (!empty($leads_info)) {
-                                    echo $leads_info->email;
-                                }
-                                ?>" name="email" disabled>
+                            <div class="form-group">
+                                <label class="col-lg-2 control-label"><?= lang('phone') ?><span class="text-danger">*</span></label>
+                                <div class="col-lg-4">
+                                    <input type="text" class="form-control" value="<?= !empty($leads_info->phone) ? $leads_info->phone : '' ?>" name="phone" >
+                                </div>
+                                <label class="col-lg-2 control-label"><?= lang('mobile') ?><span class="text-danger">*</span></label>
+                                <div class="col-lg-4">
+                                    <input type="text" class="form-control" value="<?= !empty($leads_info->mobile) ? $leads_info->mobile : '' ?>" name="mobile">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-
-                            <label class="col-lg-2 control-label"><?= lang('phone') ?><span
-                                        class="text-danger"> *</span></label>
-                            <div class="col-lg-4">
-                                <input type="text" class="form-control" value="<?php
-                                if (!empty($leads_info)) {
-                                    echo $leads_info->phone;
-                                }
-                                ?>" name="phone" disabled>
+                            <div class="form-group">
+                                <label class="col-lg-2 control-label"><?= lang('city') ?></label>
+                                <div class="col-lg-4">
+                                    <input type="text" class="form-control" value="<?= !empty($leads_info->city) ? $leads_info->city : '' ?>" name="city" >
+                                </div>
+                                <label class="col-lg-2 control-label"><?= lang('state') ?></label>
+                                <div class="col-lg-4">
+                                    <input type="text" class="form-control" value="<?= !empty($leads_info->state) ? $leads_info->state : '' ?>" name="state">
+                                </div>
                             </div>
-                            <label class="col-lg-2 control-label"><?= lang('mobile') ?><span
-                                        class="text-danger">*</span>
-                            </label>
-                            <div class="col-lg-4">
-                                <input type="text" min="0"  disabled class="form-control" value="<?php
-                                if (!empty($leads_info)) {
-                                    echo $leads_info->mobile;
-                                }
-                                ?>" name="mobile"/>
+                            <div class="form-group">
+                                <label class="col-lg-2 control-label"><?= lang('country') ?></label>
+                                <div class="col-lg-4">
+                                    <select name="country" class="form-control person select_box" style="width: 100%" >
+                                        <option value="<?= !empty($leads_info->country) ? $leads_info->country : $this->config->item('company_country') ?>">
+                                            <?= !empty($leads_info->country) ? $leads_info->country : $this->config->item('company_country') ?>
+                                        </option>
+                                        <optgroup label="<?= lang('other_countries') ?>">
+                                            <?php foreach ($this->db->get('tbl_countries')->result() as $country): ?>
+                                                <option value="<?= $country->value ?>"><?= $country->value ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <label class="col-lg-2 control-label"><?= lang('address') ?></label>
+                                <div class="col-lg-4">
+                                    <textarea name="address" class="form-control" ><?= !empty($leads_info->address) ? $leads_info->address : '' ?></textarea>
+                                </div>
                             </div>
-                        </div>
-                        <!-- End discount Fields -->
-                        <div class="form-group">
-                            <label class="col-lg-2 control-label"><?= lang('city') ?> </label>
-                            <div class="col-lg-4">
-                                <input type="text" class="form-control" value="<?php
-                                if (!empty($leads_info)) {
-                                    echo $leads_info->city;
-                                }
-                                ?>" name="city" disabled>
-                            </div>
-
-                            <label class="col-lg-2 control-label"><?= lang('state') ?> </label>
-                            <div class="col-lg-4">
-                                <input type="text" class="form-control" value="<?php
-                                if (!empty($leads_info)) {
-                                    echo $leads_info->state;
-                                }
-                                ?>" name="state" disabled>
-                            </div>
-
-                        </div>
-                        <div class="form-group">
-                            <label class="col-lg-2 control-label"><?= lang('country') ?></label>
-                            <div class="col-lg-4">
-                                <select name="country" class="form-control person select_box"
-                                        style="width: 100%" disabled>
-                                    <optgroup label="Default Country">
-                                        <?php if (!empty($leads_info->country)) { ?>
-                                            <option
-                                                    value="<?= $leads_info->country ?>"><?= $leads_info->country ?></option>
-                                        <?php } else { ?>
-                                            <option
-                                                    value="<?= $this->config->item('company_country') ?>"><?= $this->config->item('company_country') ?></option>
-                                        <?php } ?>
-                                    </optgroup>
-                                    <optgroup label="<?= lang('other_countries') ?>">
-                                        <?php
-                                        $countries = $this->db->get('tbl_countries')->result();
-                                        if (!empty($countries)): foreach ($countries as $country):
-                                            ?>
-                                            <option
-                                                    value="<?= $country->value ?>"><?= $country->value ?></option>
-                                        <?php
-                                        endforeach;
-                                        endif;
-                                        ?>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            <label class="col-lg-2 control-label"><?= lang('address') ?> </label>
-                            <div class="col-lg-4">
-                            <textarea name="address" class="form-control" disabled><?php
-                                if (!empty($leads_info)) {
-                                    echo $leads_info->address;
-                                }
-                                ?></textarea>
-                            </div>
-                        </div>
+                        <!-- Edited sps ends -->
                             <div class="form-group">
                                 <label class="col-lg-2 control-label"><?= lang('expected_revenue') ?></label>
                                 <div class="col-lg-4">

@@ -7,34 +7,6 @@
 </style>
 <?php
 
-// editing sps start
-$where = array('user_id' => $this->session->userdata('user_id'), 'module_id' => $leads_details->leads_id, 'module_name' => 'leads');
-$check_existing = $this->items_model->check_by($where, 'tbl_pinaction');
-if (!empty($check_existing)) {
-    $url = 'remove_todo/' . $check_existing->pinaction_id;
-    $btn = 'danger';
-    $title = lang('remove_todo');
-} else {
-    $url = 'add_todo_list/leads/' . $leads_details->leads_id;
-    $btn = 'warning';
-    $title = lang('add_todo_list');
-}
-
-
-$can_edit = $this->items_model->can_action('tbl_leads', 'edit', array('leads_id' => $leads_details->leads_id));
-$can_delete = $this->items_model->can_action('tbl_leads', 'delete', array('leads_id' => $leads_details->leads_id));
-$all_calls_info = $this->db->where('leads_id', $leads_details->leads_id)->get('tbl_calls')->result();
-$all_meetings_info = $this->db->where('leads_id', $leads_details->leads_id)->get('tbl_mettings')->result();
-
-$comment_details = $this->db->where(array('leads_id' => $leads_details->leads_id, 'comments_reply_id' => '0', 'task_attachment_id' => '0', 'uploaded_files_id' => '0'))->order_by('comment_datetime', 'DESC')->get('tbl_task_comment')->result();
-$all_task_info = $this->db->where('leads_id', $leads_details->leads_id)->order_by('leads_id', 'DESC')->get('tbl_task')->result();
-$activities_info = $this->db->where(array('module' => 'leads', 'module_field_id' => $leads_details->leads_id))->order_by('activity_date', 'DESC')->get('tbl_activities')->result();
-$all_proposals_info = $this->db->where(array('module' => 'leads', 'module_id' => $leads_details->leads_id))->order_by('proposals_id', 'DESC')->get('tbl_proposals')->result();
-$all_tender =  $this->db->where(array('leads_id'=> $leads_details->leads_id,'deletion_indicator'=>0))->order_by('leads_id', 'DESC')->get('tbl_leads_tenders')->result();
-// editing sps end
-
-
-
 $edited = can_action('56', 'edited');
 $can_edit = $this->items_model->can_action('tbl_opportunities', 'edit', array('opportunities_id' => $opportunity_details->opportunities_id));
 $comment_details = $this->db->where(array('opportunities_id' => $opportunity_details->opportunities_id, 'comments_reply_id' => '0', 'task_attachment_id' => '0', 'uploaded_files_id' => '0'))->order_by('comment_datetime', 'DESC')->get('tbl_task_comment')->result();
@@ -202,15 +174,15 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                     </p>
                                 </div>
                             </div>
-                            <!-- edited here sps -->
+                            <!-- edited sps start -->
                             <div class="form-group col-sm-12">
                                 <div class="col-sm-6">
                                     <label class="control-label col-sm-5"><strong><?= lang('contact_name') ?>
                                             : </strong></label>
                                     <p class="form-control-static">
                                         <?php
-                                        if (!empty($leads_details->contact_name)) {
-                                            echo $leads_details->contact_name;
+                                        if (!empty($opportunity_details->contact_name)) {
+                                            echo $opportunity_details->contact_name;
                                         }
                                         ?>
                                     </p>
@@ -219,8 +191,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                     <label class="control-label col-sm-5"><strong><?= lang('email') ?> :</strong> </label>
                                     <p class="form-control-static">
                                         <?php
-                                        if (!empty($leads_details->email)) {
-                                            echo $leads_details->email;
+                                        if (!empty($opportunity_details->email)) {
+                                            echo $opportunity_details->email;
                                         }
                                         ?>
                                     </p>
@@ -231,8 +203,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                 <label class="control-label col-sm-5"><strong><?= lang('phone') ?> : </strong></label>
                                 <p class="form-control-static">
                                     <?php
-                                    if (!empty($leads_details->phone)) {
-                                        echo $leads_details->phone;
+                                    if (!empty($opportunity_details->phone)) {
+                                        echo $opportunity_details->phone;
                                     }
                                     ?>
                                 </p>
@@ -242,8 +214,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                 </label>
                                 <p class="form-control-static">
                                     <?php
-                                    if (!empty($leads_details->organization)) {
-                                        echo $leads_details->organization;
+                                    if (!empty($opportunity_details->organization)) {
+                                        echo $opportunity_details->organization;
                                     }
                                     ?>
                                 </p>
@@ -254,8 +226,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                 <label class="control-label col-sm-5"><strong><?= lang('mobile') ?> :</strong></label>
                                 <p class="form-control-static">
                                     <?php
-                                    if (!empty($leads_details->mobile)) {
-                                        echo $leads_details->mobile;
+                                    if (!empty($opportunity_details->mobile)) {
+                                        echo $opportunity_details->mobile;
                                     }
                                     ?>
                                 </p>
@@ -264,8 +236,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                 <label class="control-label col-sm-5"><strong><?= lang('address') ?>: </strong></label>
                                 <p class="form-control-static">
                                     <?php
-                                    if (!empty($leads_details->address)) {
-                                        echo $leads_details->address;
+                                    if (!empty($opportunity_details->address)) {
+                                        echo $opportunity_details->address;
                                     }
                                     ?>
                                 </p>
@@ -276,8 +248,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                 <label class="control-label col-sm-5"><strong><?= lang('city') ?>: </strong></label>
                                 <p class="form-control-static">
                                     <?php
-                                    if (!empty($leads_details->city)) {
-                                        echo $leads_details->city;
+                                    if (!empty($opportunity_details->city)) {
+                                        echo $opportunity_details->city;
                                     }
                                     ?>
                                 </p>
@@ -286,8 +258,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                 <label class="control-label col-sm-5"><strong><?= lang('country') ?>: </strong></label>
                                 <p class="form-control-static">
                                     <?php
-                                    if (!empty($leads_details->country)) {
-                                        echo $leads_details->country;
+                                    if (!empty($opportunity_details->country)) {
+                                        echo $opportunity_details->country;
                                     }
                                     ?>
                                 </p>
@@ -298,8 +270,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                 <label class="control-label col-sm-5"><strong><?= lang('language') ?>: </strong></label>
                                 <p class="form-control-static">
                                     <?php
-                                    if (!empty($leads_details->language)) {
-                                        echo $leads_details->language;
+                                    if (!empty($opportunity_details->language)) {
+                                        echo $opportunity_details->language;
                                     }
                                     ?>
                                 </p>
@@ -309,8 +281,8 @@ $all_tender =  $this->db->where(array('opportunities_id'=> $opportunity_details-
                                         class="control-label col-sm-5"><strong><?= lang('state') ?>
                                         : </strong></label>
                                 <p class="form-control-static"><?php
-                                    if (!empty($leads_details->state)) {
-                                        echo $leads_details->state;
+                                    if (!empty($opportunity_details->state)) {
+                                        echo $opportunity_details->state;
                                     }
                                     ?></p>
                             </div>

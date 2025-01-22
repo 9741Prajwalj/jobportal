@@ -41,7 +41,7 @@
                                                    if (!empty($leads_info->lead_name)) {
                                                        echo $leads_info->lead_name;
                                                    }
-                                                   ?>" name="name">
+                                                   ?>" name="company_name">
                                         </div>
                                     </div>
                                     <div class="form-group">

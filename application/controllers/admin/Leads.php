@@ -23,13 +23,29 @@ class Leads extends Admin_Controller
         );
     }
 
-    public function convert1() {
-        // Add logic to process the conversion to an opportunity
-        // For now, we will redirect to a dummy page for demonstration
-        $data['title'] = 'Opportunity Conversion Page';
+    public function create_from_lead()
+    {
+        $leads_id = $this->input->post('leads_id');
 
-        // Load a view file for the opportunity conversion
-        $this->load->view('all_oppertunities', $data);
+        // Debug: Check if $leads_id is being passed correctly
+        if (empty($leads_id)) {
+            show_error("Lead ID is missing or invalid.");
+            return;
+        }
+
+        // Retrieve the lead details from the database using the lead ID
+        $this->db->where('leads_id', $leads_id);
+        $leads_details = $this->db->get('tbl_leads')->row();
+
+        // Debug: Check if $leads_details is retrieved
+        if (empty($leads_details)) {
+            show_error("No lead found with ID: $leads_id");
+            return;
+        }
+
+        // Pass the lead details to the 'create' view
+        $data['leads_details'] = $leads_details; 
+        $this->load->view('admin/opportunities/create', $data); 
     }
 
     public function index($id = NULL)
@@ -44,7 +60,7 @@ class Leads extends Admin_Controller
                 $data['active'] = 1;
                 $this->session->unset_userdata('leads_kanban');
             } elseif ($id == 'by_status') {
-                $data['active'] = 1;
+                $data['active'] = 1;    
                 $lead_status_id = $this->uri->segment(5);
                 if ($lead_status_id == 'all') {
                     redirect('admin/leads');
@@ -746,6 +762,369 @@ class Leads extends Admin_Controller
 
         redirect('admin/client/client_details/' . $return_id);
     }
+
+    public function convert_to_opportunities($id)
+    {
+        $data['title'] = lang('convert_to_opportunity'); // Page title
+        $data['person'] = 1;
+
+        // Get all countries
+        $this->items_model->_table_name = "tbl_countries"; // Table name
+        $this->items_model->_order_by = "id";
+        $data['countries'] = $this->items_model->get();
+
+        // Get all currencies
+        $this->items_model->_table_name = 'tbl_currencies';
+        $this->items_model->_order_by = 'name';
+        $data['currencies'] = $this->items_model->get();
+
+        // Get all languages
+        $data['languages'] = $this->db->where('active', 1)->order_by('name', 'ASC')->get('tbl_languages')->result();
+
+        // Get leads information
+        $data['leads_info'] = $this->items_model->check_by(array('leads_id' => $id), 'tbl_leads');
+
+        // Load modal view for converting to opportunity
+        $data['modal_subview'] = $this->load->view('admin/leads/_modal_convert_to_opportunity', $data, FALSE);
+        $this->load->view('admin/_layout_modal', $data);
+    }
+
+    public function converted_to_opportunity($leads_id)
+    {
+        $data = $this->items_model->array_from_post(array(
+            'name', 'email', 'short_note', 'website', 'phone', 'mobile', 'fax', 'address', 'city', 'zipcode', 'currency',
+            'skype_id', 'linkedin', 'facebook', 'twitter', 'language', 'country', 'vat', 'hosting_company', 'hostname', 'port', 'password', 'username', 'opportunity_status', 'latitude', 'longitude', 'customer_group_id'
+        ));
+        if (!empty($_FILES['profile_photo']['name'])) {
+            $val = $this->items_model->uploadImage('profile_photo');
+            $val == TRUE || redirect('admin/opportunities/manage_opportunity');
+            $data['profile_photo'] = $val['path'];
+        }
+        $data['leads_id'] = $leads_id;
+        $data['opportunity_status'] = '0';
+
+        $this->items_model->_table_name = 'tbl_opportunities';
+        $this->items_model->_primary_key = "opportunities _id";
+        $return_id = $this->items_model->save($data);
+
+        // Update to tbl_leads
+        $u_data['converted_opportunity_id'] = $return_id;
+        $this->items_model->_table_name = 'tbl_leads';
+        $this->items_model->_primary_key = "leads_id";
+        $this->items_model->save($u_data, $leads_id);
+
+        $action = ('activity_convert_to_opportunity');
+        $activities = array(
+            'user' => $this->session->userdata('user_id'),
+            'module' => 'leads',
+            'module_field_id' => $return_id,
+            'activity' => $action,
+            'icon' => 'fa-rocket',
+            'link' => 'admin/leads/leads_details/' . $leads_id,
+            'value1' => $data['name']
+        );
+        $this->items_model->_table_name = 'tbl_activities';
+        $this->items_model->_primary_key = "activities_id";
+        $this->items_model->save($activities);
+
+        // Messages for user
+        $type = "success";
+        $message = lang('convert_to_opportunity_success');
+        set_message($type, $message);
+
+        $leads_info = $this->items_model->check_by(array('leads_id' => $leads_id), 'tbl_leads');
+        $opportunity_info = $this->items_model->check_by(array('opportunity_id' => $return_id), 'tbl_opportunities');
+        $notifiedUsers = array();
+        if (!empty($leads_info->permission) && $leads_info->permission != 'all') {
+            $permissionUsers = json_decode($leads_info->permission);
+            foreach ($permissionUsers as $user => $v_permission) {
+                array_push($notifiedUsers, $user);
+            }
+        } else {
+            $notifiedUsers = $this->items_model->allowed_user_id('55');
+        }
+        if (!empty($notifiedUsers)) {
+            foreach ($notifiedUsers as $users) {
+                if ($users != $this->session->userdata('user_id')) {
+                    add_notification(array(
+                        'to_user_id' => $users,
+                        'from_user_id' => true,
+                        'description' => 'not_lead_converted_to_opportunity',
+                        'link' => 'admin/leads/leads_details/' . $leads_info->leads_id,
+                        'value' => lang('lead') . ' ' . $leads_info->lead_name . ' ' . lang('opportunity') . ' ' . $opportunity_info->name,
+                    ));
+                }
+            }
+            show_notification($notifiedUsers);
+        }
+
+        redirect('admin/opportunities/opportunities_details/' . $return_id);
+    }
+
+    // public function saved_opportunity($id = NULL)
+    // {
+    //     $created = can_action('56', 'created');
+    //     $edited = can_action('56', 'edited');
+    //     if (!empty($created) || !empty($edited) && !empty($id)) {
+    //         $this->items_model->_table_name = 'tbl_opportunities';
+    //         $this->items_model->_primary_key = 'opportunities_id';
+
+    //         $data = $this->items_model->array_from_post(array('opportunity_name', 'stages', 'probability', 'close_date', 'opportunities_state_reason_id', 'expected_revenue', 'new_link', 'next_action', 'next_action_date', 'notes', 'company_name', 'email', 'phone', 'mobile','city','state','country','address'));
+    //         $permission = $this->input->post('permission', true);
+    //         if (!empty($permission)) {
+
+    //             if ($permission == 'everyone') {
+    //                 $assigned = 'all';
+    //             } else {
+    //                 $assigned_to = $this->items_model->array_from_post(array('assigned_to'));
+    //                 if (!empty($assigned_to['assigned_to'])) {
+    //                     foreach ($assigned_to['assigned_to'] as $assign_user) {
+    //                         $assigned[$assign_user] = $this->input->post('action_' . $assign_user, true);
+    //                     }
+    //                 }
+    //             }
+    //             if (!empty($assigned)) {
+    //                 if ($assigned != 'all') {
+    //                     $assigned = json_encode($assigned);
+    //                 }
+    //             } else {
+    //                 $assigned = 'all';
+    //             }
+    //             $data['permission'] = $assigned;
+    //         } else {
+    //             set_message('error', lang('assigned_to') . ' Field is required');
+    //             if (empty($_SERVER['HTTP_REFERER'])) {
+    //                 redirect('admin/opportunities');
+    //             } else {
+    //                 redirect($_SERVER['HTTP_REFERER']);
+    //             }
+    //         }
+    //         // update root category
+    //         $where = array('opportunity_name' => $data['opportunity_name']);
+    //         // duplicate value check in DB
+    //         if (!empty($id)) { // if id exist in db update data
+    //             $opportunities_id = array('opportunities_id !=' => $id);
+    //         } else { // if id is not exist then set id as null
+    //             $opportunities_id = null;
+    //         }
+
+    //         // check whether this input data already exist or not
+    //         $check_opportunity = $this->items_model->check_update('tbl_opportunities', $where, $opportunities_id);
+
+    //         if (!empty($check_opportunity)) { // if input data already exist show error alert
+    //             // massage for user
+    //             $type = 'error';
+    //             $msg = "<strong style='color:#000'>" . $data['opportunity_name'] . '</strong>  ' . lang('already_exist');
+    //         } else { // save and update query
+    //             $return_id = $this->items_model->save($data, $id);
+
+    //             if (!empty($id)) {
+    //                 $id = $id;
+    //                 $action = 'activity_update_opportunity';
+    //                 $msg = lang('update_opportunity');
+    //                 $description = 'not_update_opportunity';
+    //             } else {
+    //                 $id = $return_id;
+    //                 $action = 'activity_save_opportunity';
+    //                 $description = 'not_save_opportunity';
+    //                 $msg = lang('save_opportunity');
+    //             }
+    //             save_custom_field(8, $id);
+
+    //             $activity = array(
+    //                 'user' => $this->session->userdata('user_id'),
+    //                 'module' => 'opportunities',
+    //                 'module_field_id' => $id,
+    //                 'activity' => $action,
+    //                 'icon' => 'fa-filter',
+    //                 'link' => 'admin/opportunities/opportunity_details/' . $id,
+    //                 'value1' => $data['opportunity_name']
+    //             );
+    //             $this->items_model->_table_name = 'tbl_activities';
+    //             $this->items_model->_primary_key = 'activities_id';
+    //             $this->items_model->save($activity);
+    //             // messages for user
+    //             $type = "success";
+    //         }
+
+    //         $message = $msg;
+    //         set_message($type, $message);
+
+    //         $opportunity_info = $this->items_model->check_by(array('opportunities_id' => $id), 'tbl_opportunities');
+    //         $notifiedUsers = array();
+    //         if (!empty($opportunity_info->permission) && $opportunity_info->permission != 'all') {
+    //             $permissionUsers = json_decode($opportunity_info->permission);
+    //             foreach ($permissionUsers as $user => $v_permission) {
+    //                 array_push($notifiedUsers, $user);
+    //             }
+    //         } else {
+    //             $notifiedUsers = $this->items_model->allowed_user_id('56');
+    //         }
+    //         if (!empty($notifiedUsers) && !empty($opportunity_info)) {
+    //             foreach ($notifiedUsers as $users) {
+    //                 if ($users != $this->session->userdata('user_id')) {
+    //                     add_notification(array(
+    //                         'to_user_id' => $users,
+    //                         'from_user_id' => true,
+    //                         'description' => $description,
+    //                         'link' => 'admin/opportunities/opportunity_details/' . $id,
+    //                         'value' => lang('opportunity') . ' ' . $data['opportunity_name'],
+    //                     ));
+    //                 }
+    //             }
+    //             show_notification($notifiedUsers);
+    //         }
+
+    //     }
+    //     if (!empty($id)) {
+    //         redirect('admin/opportunities/opportunity_details/' . $id);
+    //     } else {
+    //         redirect('admin/opportunities');
+    //     }
+
+    // }
+    public function saved_opportunity($id = NULL)
+{
+    log_message('debug', 'Entering saved_opportunity different function');
+    
+    $created = can_action('56', 'created');
+    $edited = can_action('56', 'edited');
+    
+    if (!empty($created) || !empty($edited) && !empty($id)) {
+        $this->items_model->_table_name = 'tbl_opportunities';
+        $this->items_model->_primary_key = 'opportunities_id';
+
+        $data = $this->items_model->array_from_post(array('opportunity_name','stages', 'probability', 'close_date', 'opportunities_state_reason_id', 'expected_revenue', 'new_link', 'next_action', 'next_action_date', 'notes','company_name','email','phone','mobile','city','state','country','address'));
+        $permission = $this->input->post('permission', true);
+
+        // Log the incoming data before processing
+        log_message('info', 'Received opportunity data: ' . json_encode($data));
+
+        if (!empty($permission)) {
+            if ($permission == 'everyone') {
+                $assigned = 'all';
+            } else {
+                $assigned_to = $this->items_model->array_from_post(array('assigned_to'));
+                if (!empty($assigned_to['assigned_to'])) {
+                    foreach ($assigned_to['assigned_to'] as $assign_user) {
+                        $assigned[$assign_user] = $this->input->post('action_' . $assign_user, true);
+                    }
+                }
+            }
+
+            if (!empty($assigned)) {
+                if ($assigned != 'all') {
+                    $assigned = json_encode($assigned);
+                }
+            } else {
+                $assigned = 'all';
+            }
+            $data['permission'] = $assigned;
+
+            // Log the assigned data
+            log_message('info', 'Assigned data: ' . json_encode($assigned));
+        } else {
+            set_message('error', lang('assigned_to') . ' Field is required');
+            if (empty($_SERVER['HTTP_REFERER'])) {
+                redirect('admin/opportunities');
+            } else {
+                redirect($_SERVER['HTTP_REFERER']);
+            }
+        }
+
+        // Duplicate check
+        $where = array('opportunity_name' => $data['opportunity_name']);
+        if (!empty($id)) {
+            $opportunities_id = array('opportunities_id !=' => $id);
+        } else {
+            $opportunities_id = null;
+        }
+
+        // Check if opportunity already exists
+        $check_opportunity = $this->items_model->check_update('tbl_opportunities', $where, $opportunities_id);
+        
+        if (!empty($check_opportunity)) {
+            $type = 'error';
+            $msg = "<strong style='color:#000'>" . $data['opportunity_name'] . '</strong>  ' . lang('already_exist');
+            log_message('error', 'Opportunity already exists this is diff: ' . json_encode($data));
+        } else {
+            $return_id = $this->items_model->save($data, $id);
+
+            // Log the saved data and return ID
+            log_message('info', 'Saved/Updated opportunity data: ' . json_encode($data) . ' with ID: ' . $return_id);
+
+            if (!empty($id)) {
+                $id = $id;
+                $action = 'activity_update_opportunity';
+                $msg = lang('update_opportunity');
+                $description = 'not_update_opportunity';
+            } else {
+                $id = $return_id;
+                $action = 'activity_save_opportunity';
+                $description = 'not_save_opportunity';
+                $msg = lang('save_opportunity');
+            }
+
+            save_custom_field(8, $id);
+
+            $activity = array(
+                'user' => $this->session->userdata('user_id'),
+                'module' => 'opportunities',
+                'module_field_id' => $id,
+                'activity' => $action,
+                'icon' => 'fa-filter',
+                'link' => 'admin/opportunities/opportunity_details/' . $id,
+                'value1' => $data['opportunity_name']
+            );
+
+            $this->items_model->_table_name = 'tbl_activities';
+            $this->items_model->_primary_key = 'activities_id';
+            $this->items_model->save($activity);
+
+            // Log the activity
+            log_message('info', 'Activity logged: ' . json_encode($activity));
+
+            $type = "success";
+        }
+
+        $message = $msg;
+        set_message($type, $message);
+
+        $opportunity_info = $this->items_model->check_by(array('opportunities_id' => $id), 'tbl_opportunities');
+        $notifiedUsers = array();
+
+        if (!empty($opportunity_info->permission) && $opportunity_info->permission != 'all') {
+            $permissionUsers = json_decode($opportunity_info->permission);
+            foreach ($permissionUsers as $user => $v_permission) {
+                array_push($notifiedUsers, $user);
+            }
+        } else {
+            $notifiedUsers = $this->items_model->allowed_user_id('56');
+        }
+
+        if (!empty($notifiedUsers) && !empty($opportunity_info)) {
+            foreach ($notifiedUsers as $users) {
+                if ($users != $this->session->userdata('user_id')) {
+                    add_notification(array(
+                        'to_user_id' => $users,
+                        'from_user_id' => true,
+                        'description' => $description,
+                        'link' => 'admin/opportunities/opportunity_details/' . $id,
+                        'value' => lang('opportunity') . ' ' . $data['opportunity_name'],
+                    ));
+                }
+            }
+            show_notification($notifiedUsers);
+        }
+    }
+
+    if (!empty($id)) {
+        redirect('admin/opportunities/opportunity_details/' . $id);
+    } else {
+        redirect('admin/opportunities');
+    }
+}
+
 
     public
     function update_users($id)

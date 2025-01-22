@@ -1,14 +1,16 @@
 <!-- Modal -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <style type="text/css">
     .bootstrap-timepicker-widget.dropdown-menu.open {
         display: inline-block;
-        z-index: 99999 !important;
+        z-index: 999999 !important;
     }
 </style>
 <div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-
+            
         </div>
     </div>
 </div>

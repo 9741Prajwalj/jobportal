@@ -96,5 +96,7 @@ $route['available_modules'] = "admin/my_module/available_modules";
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
+// $route['leads/opportunity_list/(:num)'] = 'leads/opportunity_list/$1';
+
 /* End of file routes.php */
 /* Location: ./application/config/routes.php */

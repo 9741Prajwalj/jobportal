@@ -344,10 +344,8 @@ class Client extends Admin_Controller
         }
         set_message($type, $message);
         redirect('admin/client/manage_client');
-
+        
     }
-
-
     public function save_client($id = NULL)
     {
         $created = can_action('4', 'created');
